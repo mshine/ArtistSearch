@@ -11,27 +11,23 @@ import javax.inject.Named
 
 class MainPresenter @Inject constructor(
     private val artistRepository: ArtistRepository,
-    private val searchRepository: SearchRepository,
     @Named(RxModule.UI) private val uiScheduler: Scheduler
 ) : BasePresenter<MainPresenter.View>() {
 
     interface View {
         val onSearchArtist: Observable<String>
 
-        fun setData(artistsList: ArtistResult)
+        fun setData(artistResult: ArtistResult)
     }
 
     override fun onViewAttached(view: View) {
         super.onViewAttached(view)
 
-        disposeOnViewDetach(view.onSearchArtist) {
-            searchRepository.setSearchTerm(it)
-        }
-
-        disposeOnViewDetach(artistRepository.artists
-            .observeOn(uiScheduler)) {
+        disposeOnViewDetach(
+            view.onSearchArtist
+                .switchMap { artistRepository.getArtists(it) }
+                .observeOn(uiScheduler)) {
             view.setData(it)
         }
     }
-
 }

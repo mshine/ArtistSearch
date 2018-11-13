@@ -1,18 +1,22 @@
 package com.lloyds.artistsearch
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jakewharton.rxbinding2.view.RxView
 import com.lloyds.artistsearch.api.ArtistResult
-import com.lloyds.artistsearch.base.BaseDaggerActivity
+import dagger.android.support.DaggerAppCompatActivity
 import io.reactivex.Observable
 import kotlinx.android.synthetic.main.activity_main.*
+import javax.inject.Inject
 
-class MainActivity : BaseDaggerActivity<MainPresenter.View, MainPresenter>(), MainPresenter.View {
+class MainActivity : DaggerAppCompatActivity(), MainPresenter.View, ListAdapter.Listener {
 
-    override val view: MainPresenter.View = this
+    @Inject
+    lateinit var presenter: MainPresenter
 
-    private var artistList: List<ArtistResult.Artist> = emptyList()
+    val view: MainPresenter.View = this
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,15 +24,37 @@ class MainActivity : BaseDaggerActivity<MainPresenter.View, MainPresenter>(), Ma
 
         recycler_view.layoutManager = LinearLayoutManager(this)
         recycler_view.hasFixedSize()
-        recycler_view.adapter = ListAdapter(this, artistList)
+        recycler_view.adapter = ListAdapter(this, emptyList(), this)
+
+        presenter.onViewAttached(view)
+    }
+
+    override fun onDestroy() {
+        presenter.onViewDetached()
+        super.onDestroy()
     }
 
     override val onSearchArtist: Observable<String> by lazy {
         RxView.clicks(search_button).map { search_edit_text.text.toString() }.share()
     }
 
-    override fun setData(artistsList: ArtistResult) {
-        artistList = artistsList.results.artistMatches.artists
-        recycler_view.adapter = ListAdapter(this, artistList)
+    override fun setData(artistResult: ArtistResult) {
+        val artists = artistResult.results.artistMatches.artists
+
+        if (artists.isNotEmpty()) {
+            (recycler_view.adapter as ListAdapter).apply {
+                this.artistList = artists
+                notifyDataSetChanged()
+            }
+        } else {
+            Toast.makeText(this, "Sorry, something went wrong!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onItemClick(artist: ArtistResult.Artist) {
+        val intent = Intent(this, ArtistActivity::class.java).apply {
+            putExtra("artist", artist)
+        }
+        startActivity(intent)
     }
 }

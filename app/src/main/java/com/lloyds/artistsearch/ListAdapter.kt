@@ -1,21 +1,28 @@
 package com.lloyds.artistsearch
 
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.jakewharton.rxrelay2.PublishRelay
 import com.lloyds.artistsearch.api.ArtistResult
+import com.lloyds.artistsearch.api.ImageSize
+import com.lloyds.artistsearch.injection.module.GlideApp
 import kotlinx.android.synthetic.main.list_item.view.*
 
-class ListAdapter(private var context: Context, private var artistList: List<ArtistResult.Artist>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class ListAdapter(private var context: Context, var artistList: List<ArtistResult.Artist>, private val listener: Listener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    interface Listener {
+        fun onItemClick(artist: ArtistResult.Artist)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.list_item, parent, false)
-        return Item(view)
+        return Item(view).apply {
+            view.setOnClickListener { listener.onItemClick(artist) }
+        }
     }
 
     override fun getItemCount(): Int {
@@ -23,25 +30,22 @@ class ListAdapter(private var context: Context, private var artistList: List<Art
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        (holder as Item).bindData(context, artistList[position], artistList[position].images[2])
+        (holder as Item).bindData(context, artistList[position], artistList[position].images.first { it.imageSize == ImageSize.Large.size })
     }
 
     class Item(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-        private val clickSubject = PublishRelay.create<ArtistResult.Artist>()
+        lateinit var artist: ArtistResult.Artist
 
-        init {
-            itemView.setOnClickListener {
-//                clickSubject.accept()
-            }
-        }
+        fun bindData(context: Context, artist: ArtistResult.Artist, artwork: ArtistResult.Artwork) {
+            this.artist = artist
+            GlideApp.with(context)
+                .load(artwork.imageUrl)
+                .placeholder(ColorDrawable(Color.GRAY))
+                .error(R.drawable.icn_sad)
+                .into(itemView.list_item_imageview)
 
-        fun bindData(context: Context, artistList: ArtistResult.Artist, artworkList: ArtistResult.Artwork) {
-            itemView.textView.text = artistList.name
-
-            Glide.with(context)
-                .load(artworkList.imageUrl)
-                .into(itemView.imageView)
+            itemView.list_item_textview.text = artist.name
         }
     }
 }

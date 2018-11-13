@@ -1,12 +1,11 @@
 package com.lloyds.artistsearch.api
 
-import com.jakewharton.rxrelay2.BehaviorRelay
-import com.jakewharton.rxrelay2.Relay
 import com.lloyds.artistsearch.BuildConfig
-import com.lloyds.artistsearch.SearchRepository
 import com.lloyds.artistsearch.injection.module.RxModule
 import io.reactivex.Observable
 import io.reactivex.Scheduler
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -14,23 +13,38 @@ import javax.inject.Singleton
 @Singleton
 class ArtistRepository @Inject constructor(
     private val api: ArtistServiceApi,
-    searchRepository: SearchRepository,
-    @Named(RxModule.IO) private val ioScheduler: Scheduler,
-    @Named(RxModule.UI) private val uiScheduler: Scheduler) {
+    private val rxNetwork: RxNetwork,
+    @Named(RxModule.IO) private val ioScheduler: Scheduler
+) {
 
-    private val artistsRelay: Relay<ArtistResult> = BehaviorRelay.create()
-    val artists: Observable<ArtistResult> = artistsRelay
-
-    init {
-        searchRepository.searchTerm
-            .subscribeOn(uiScheduler)
-            .subscribe { searchMovies(it) }
-    }
-
-    private fun searchMovies(searchTerm: String) {
-        api.artists(searchTerm, BuildConfig.ARTIST_API_TOKEN)
+    fun getArtists(searchTerm: String): Observable<ArtistResult> {
+        return api.artists(searchTerm, BuildConfig.ARTIST_API_TOKEN)
             .subscribeOn(ioScheduler)
             .toObservable()
-            .subscribe { artistsRelay.accept(it) }
+            .compose(rxNetwork.retryOnFailure())
+            .flatMap {
+                when (it) {
+                    is RxNetwork.Result.Success -> {
+                        Observable.just(it.data)
+                    }
+                    is RxNetwork.Result.Failure -> {
+                        val emptyResult = ArtistResult(ArtistResult.Results(ArtistResult.ArtistMatches(emptyList())))
+                        return@flatMap when (it.throwable) {
+                            is Exception -> Observable.just(emptyResult)
+                            is HttpException -> {
+                                if (it.throwable.code() == 400) {
+                                    Observable.just(emptyResult)
+                                } else {
+                                    Observable.never()
+                                }
+                            }
+                            is IOException -> {
+                                Observable.never()
+                            }
+                            else -> Observable.just(emptyResult)
+                        }
+                    }
+                }
+            }.share()
     }
 }
