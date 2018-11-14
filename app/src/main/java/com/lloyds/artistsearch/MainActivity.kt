@@ -39,16 +39,14 @@ class MainActivity : DaggerAppCompatActivity(), MainPresenter.View, ListAdapter.
     }
 
     override fun setData(artistResult: ArtistResult) {
-        val artists = artistResult.results.artistMatches.artists
-
-        if (artists.isNotEmpty()) {
-            (recycler_view.adapter as ListAdapter).apply {
-                this.artistList = artists
-                notifyDataSetChanged()
-            }
-        } else {
-            Toast.makeText(this, "Sorry, something went wrong!", Toast.LENGTH_SHORT).show()
+        (recycler_view.adapter as ListAdapter).apply {
+            this.artistList = artistResult.results.artistMatches.artists
+            notifyDataSetChanged()
         }
+    }
+
+    override fun showError() {
+        Toast.makeText(this, getString(R.string.api_error), Toast.LENGTH_LONG).show()
     }
 
     override fun onItemClick(artist: ArtistResult.Artist) {
