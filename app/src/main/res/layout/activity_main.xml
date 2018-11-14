@@ -6,7 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:padding="16dp"
+        android:padding="@dimen/medium"
         tools:context=".MainActivity">
 
     <EditText
@@ -18,26 +18,25 @@
             app:layout_constraintBottom_toTopOf="@id/recycler_view"
             app:layout_constraintEnd_toStartOf="@id/search_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:autofillHints="yeah, you"/>
+            app:layout_constraintTop_toTopOf="parent"/>
 
     <Button
             android:id="@+id/search_button"
             android:layout_width="120dp"
             android:layout_height="wrap_content"
             android:minHeight="40dp"
-            android:background="@drawable/bg_blue_button_ripple"
+            android:background="@color/blue"
             android:textColor="#FFF"
             android:text="@string/search_button"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="@dimen/medium"
+            android:layout_marginEnd="@dimen/medium"
             android:textAllCaps="false"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/search_edit_text"/>
 
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/small"
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:layout_constraintEnd_toEndOf="parent"

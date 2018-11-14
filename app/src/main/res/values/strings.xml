@@ -1,9 +1,9 @@
 <resources>
     <string name="app_name">Artist Search</string>
-    <string name="action_settings">Settings</string>
     <string name="search_button">Search</string>
     <string name="edit_text_hint">Enter an artist</string>
     <string name="artist_name">Artist: %s</string>
     <string name="listeners">Listeners: %s</string>
     <string name="artist_activity_label">Artist Details</string>
+    <string name="api_error">Sorry, something went wrong!</string>
 </resources>
